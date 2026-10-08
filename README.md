@@ -47,17 +47,17 @@ The hosted app uses a persistent PostgreSQL database. Vercel's application files
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | Neon's pooled PostgreSQL connection string; its hostname contains `-pooler`. |
-| `DIRECT_URL` | The matching unpooled connection string for migrations. |
+| `DATABASE_URL_UNPOOLED` | The matching unpooled connection string for migrations, supplied by the Neon integration. |
 | `AUTH_SECRET` | A new random secret generated with the command above; keep it stable between deployments. |
 | `AUTH_URL` | The final HTTPS production origin, without a path, such as `https://your-project.vercel.app`. |
 | `AUTH_TRUST_HOST` | `true` for Vercel's trusted reverse proxy. |
 
-Use the database provider's actual URLs, including `sslmode=require`. A `connect_timeout=15` query parameter allows extra time for a sleeping Neon database to wake. Marketplace variable names can vary: map the pooled URL to `DATABASE_URL` and the unpooled URL (often supplied as `DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING`) to `DIRECT_URL`.
+Use the database provider's actual URLs, including `sslmode=require`. A `connect_timeout=15` query parameter allows extra time for a sleeping Neon database to wake. The Neon integration supplies the pooled URL as `DATABASE_URL` and the unpooled URL as `DATABASE_URL_UNPOOLED`. If another provider uses different names, map its connection strings to those variables.
 
 4. Set the Vercel build command to `npm run vercel-build` and deploy. This command generates the PostgreSQL Prisma client, applies committed migrations with `prisma migrate deploy`, then runs `next build`. `postinstall` generates a local client during dependency installation; `vercel-build` deliberately replaces it with the hosted client before building.
 5. Open the deployed site, create a hosted account, add a transaction, refresh, and verify that the transaction and dashboard totals persist. Local accounts and data remain in the local database unless explicitly migrated.
 
-If Preview deployments are enabled, give them a separate Neon branch/database and corresponding `DATABASE_URL` and `DIRECT_URL`. Do not point preview migrations at production. Set `AUTH_URL` for that environment's actual origin or let Auth.js infer the Vercel preview host instead of inheriting the production URL.
+If Preview deployments are enabled, give them a separate Neon branch/database and corresponding `DATABASE_URL` and `DATABASE_URL_UNPOOLED`. Do not point preview migrations at production. Set `AUTH_URL` for that environment's actual origin or let Auth.js infer the Vercel preview host instead of inheriting the production URL.
 
 Prisma 5.22 reads `url` and `directUrl` from the production schema. Do not add a newer `prisma.config.ts` or upgrade Prisma as part of this deployment setup. Keep both schema model definitions synchronized when changing the data model, and generate/review a new PostgreSQL migration before deploying model changes.
 
@@ -76,7 +76,7 @@ npm run build
 - `npm run db:generate`: generate the local SQLite Prisma client.
 - `npm run db:setup`: synchronize the local SQLite database with the local schema.
 - `npm run db:generate:production`: generate the hosted PostgreSQL client.
-- `npm run db:migrate:production`: apply pending PostgreSQL migrations to `DIRECT_URL`; this changes that database.
+- `npm run db:migrate:production`: apply pending PostgreSQL migrations to `DATABASE_URL_UNPOOLED`; this changes that database.
 - `npm run vercel-build`: generate the hosted client, apply migrations, and build Next.js.
 
 The two clients share the same generated output, so do not run a hosted build in the same checkout while a local development server is running. Use a separate checkout/build environment for deployment. `npm run dev` restores the local client on the next start.
