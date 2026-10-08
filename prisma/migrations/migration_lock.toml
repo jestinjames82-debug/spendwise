@@ -1,0 +1,3 @@
+# PostgreSQL migrations belong to schema.production.prisma.
+# Local SQLite development uses db push with schema.prisma.
+provider = "postgresql"
