@@ -1,48 +1,77 @@
 # SpendWise
 
-SpendWise is a personal finance tracking web application that I built to make it easier to manage everyday expenses and keep track of spending.
+A full-stack personal finance web app for recording income and expenses, managing monthly category budgets, and visualizing spending.
 
-The idea behind this project was to create a simple platform where users can record their transactions, organize expenses, and get a better understanding of where their money goes.
-
-## Live Demo
-
-https://spendwise-pennypath.vercel.app/
+**[Live demo](https://spendwise-pennypath.vercel.app/)**
 
 ## Features
 
-- Track income and expenses
-- Organize transactions into categories
-- View financial information on a dashboard
-- Visualize spending through charts
-- Manage personal budgets
-- User login and registration
-- Responsive interface for desktop and mobile devices
+- **Transactions:** Add, edit, and delete income or expenses with a date, category, description, and optional notes. Search descriptions and notes; filter by type, category, or exact date.
+- **Categories:** Use default income/expense categories or create custom ones. Categories referenced by transactions or budgets cannot be deleted.
+- **Budgets:** Set monthly limits by expense category, edit limits, and compare them with spending for the selected month.
+- **Analytics:** View six months of income versus expenses in a bar chart and a selected month's expense breakdown in a category chart.
+- **Accounts:** Register and sign in with email/password; financial records are scoped to the authenticated user.
+- **Responsive UI:** Desktop and mobile layouts, including mobile dashboard navigation.
 
-## About the Project
+## Technical implementation
 
-I started SpendWise as a way to improve my web development skills while working on something useful.
+| Layer | Implementation |
+| --- | --- |
+| Application | Next.js 16 App Router, React 19, TypeScript |
+| UI and charts | Tailwind CSS 4, Recharts |
+| Authentication | NextAuth v5 beta, Prisma adapter, credentials provider, JWT sessions |
+| Data access | Prisma 5; SQLite locally and PostgreSQL for hosted builds |
+| Validation | Zod schemas in Server Actions |
+| Hosting | Vercel configuration with a PostgreSQL-specific build command |
 
-While developing it, I focused on keeping the interface simple and making everyday financial tracking more convenient.
+Implementation details are available directly in the source:
 
-The project also gave me practical experience with application development, debugging, and deployment.
+- [Server Actions](src/app/actions.ts) handle transaction, category, budget, and profile operations. They derive ownership from the session, validate inputs, and scope database operations by user ID.
+- [Authentication](src/auth.ts) verifies bcrypt password hashes. Registration hashes passwords with bcrypt; password changes invalidate existing sessions on their next request.
+- [Prisma schemas](prisma/) define users, transactions, categories, budgets, and authentication records.
+- [Dashboard components](src/components/dashboard/) and [analytics](src/app/dashboard/analytics/page.tsx) aggregate transaction data for the charts.
 
-## Future Improvements
+## Deployment evidence
 
-There are still a few things I plan to work on:
+[Vercel configuration](vercel.json) installs dependencies with `npm ci` and runs `npm run vercel-build`. That script generates the production Prisma client, applies committed migrations, and builds Next.js.
 
-- Improving the dashboard and analytics
-- Adding monthly spending reports
-- Introducing savings goals
-- Making the application more reliable and user-friendly
+The [production schema](prisma/schema.production.prisma) uses `DATABASE_URL` for PostgreSQL and `DATABASE_URL_UNPOOLED` for the direct migration connection. [.env.example](.env.example) documents Neon's pooled/direct connection setup and authentication variables.
 
-## Deployment
+Repository milestones on **8 October 2026**:
 
-SpendWise is hosted on Vercel.
+- [Repaired app and PostgreSQL setup](https://github.com/jestinjames82-debug/spendwise/commit/2ae4d85d4ab48fb95dc6f25fc2e4beced4103b90).
+- [Vercel production build configuration](https://github.com/jestinjames82-debug/spendwise/commit/75037f94176598f2126d0b14f5dbabab52dfd25a).
+- [Neon unpooled connection variable for migrations](https://github.com/jestinjames82-debug/spendwise/commit/df2da77a994fd4306aab9e03c9764d957bda2497).
 
-Live website: https://spendwise-pennypath.vercel.app/
+## Run locally
 
-## Developed By
+```bash
+git clone https://github.com/jestinjames82-debug/spendwise.git
+cd spendwise
+npm ci
+cp .env.example .env.local
+```
 
-Jestin James
+Replace `AUTH_SECRET` in `.env.local` with a random secret; the example file includes a generation command. Keep `AUTH_URL=http://localhost:3000`, then run:
 
-B.Tech Computer Science and Engineering (AI & ML)
+```bash
+npm run db:setup
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000). Local development uses SQLite. Available checks are `npm run lint` and `npm run build`.
+
+For Vercel, configure `AUTH_SECRET`, `AUTH_URL`, `AUTH_TRUST_HOST`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED` as described in the example environment file.
+
+## Next improvements
+
+These are proposed work, not completed features:
+
+- **Password recovery:** Configure production email delivery. The current reset flow only prints a private reset link to the server console in development; production requests report that email delivery is unavailable.
+- **Regression coverage:** Add automated tests for user ownership checks, transaction validation, duplicate monthly budgets, and password-reset token handling.
+- **Monthly reports:** Extend the existing monthly category breakdown with downloadable spending summaries.
+- **Savings goals:** Add target amounts and progress tracking alongside the existing expense budgets.
+
+## Author
+
+**Jestin James** — B.Tech Computer Science and Engineering (AI & ML).
